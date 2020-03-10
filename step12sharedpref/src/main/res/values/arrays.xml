@@ -1,0 +1,15 @@
+<resources>
+    <!-- Reply Preference -->
+    <string-array name="reply_entries">
+        <item>Reply</item>
+        <item>Reply to all</item>
+        <item>무시하기</item>
+    </string-array>
+
+    <string-array name="reply_values">
+        <item>reply</item>
+        <item>reply_all</item>
+        <item>아잉 난몰라</item>
+    </string-array>
+</resources>
+<!-- arrays.xml은 SQL의 select문과 같은 역할은 하는 문서라고 이해하면 쉽다-->
