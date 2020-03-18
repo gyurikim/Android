@@ -1,6 +1,12 @@
 package com.gura.step16jsonparse;
 
+import android.app.Activity;
+import android.content.Context;
 import android.os.AsyncTask;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewParent;
+import android.view.inputmethod.InputMethodManager;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -69,7 +75,7 @@ public class Util {
                         encodedValue= URLEncoder.encode(param.get(key), "utf-8");
                     } catch (UnsupportedEncodingException e) {}
                     if(isFirst){
-                        arg="?"+key+"="+encodedValue;
+                        arg="?"+key+"="+encodedValue;//GET방식 : URL에 직접 담겨서 전달됨
                         isFirst=false;
                     }else{
                         arg="&"+key+"="+encodedValue;
@@ -187,7 +193,7 @@ public class Util {
                         arg=key+"="+param.get(key);
                         isFirst=false;
                     }else{
-                        arg="&"+key+"="+param.get(key);
+                        arg="&"+key+"="+param.get(key);//POST방식 : 바디에 담겨서 pw로 전달된다.....?
                     }
                     buffer.append(arg);
                 }
@@ -272,6 +278,31 @@ public class Util {
             }else{//실패 (예외발생)
                 listener.onFail(requestId, map);
             }
+        }
+    }
+    //키보드 숨기는 메소드
+    public static void hideKeyboard(Activity activity){
+
+        InputMethodManager iManager=(InputMethodManager)
+                activity.getSystemService(Context.INPUT_METHOD_SERVICE);
+        if(activity.getCurrentFocus()==null)return;
+        iManager.hideSoftInputFromWindow(activity.getCurrentFocus().getWindowToken(), 0);
+    }
+    //메소드의 인자로 전달되는 View 객체의 포커스 해제하는 메소드
+    public static void releaseFocus(View view) {
+        ViewParent parent = view.getParent();
+        ViewGroup group = null;
+        View child = null;
+        while (parent != null) {
+            if (parent instanceof ViewGroup) {
+                group = (ViewGroup) parent;
+                for (int i = 0; i < group.getChildCount(); i++) {
+                    child = group.getChildAt(i);
+                    if(child != view && child.isFocusable())
+                        child.requestFocus();
+                }
+            }
+            parent = parent.getParent();
         }
     }
 }
