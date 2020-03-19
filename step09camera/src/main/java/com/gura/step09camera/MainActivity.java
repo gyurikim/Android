@@ -2,6 +2,7 @@ package com.gura.step09camera;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -28,13 +29,16 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
-        implements View.OnClickListener{
+        implements View.OnClickListener,
+        Util.RequestListener{
     //필드
     private ImageView imageView;
     private String absolutePath; //사진이 저장된 절대 경로
-
+    public final String UPLOAD_URL="http://192.168.0.15:8888/spring05/android/image/upload.do";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,25 +48,37 @@ public class MainActivity extends AppCompatActivity
         takePicBtn.setOnClickListener(this);
         //ImageView 의 참조값
         imageView=findViewById(R.id.imageView);
+
+        Button uploadBtn=findViewById(R.id.uploadBtn);
+        uploadBtn.setOnClickListener(this);
     }
 
     @Override
     public void onClick(View view) {
-        int permissionCheck=
-                ContextCompat.checkSelfPermission(this,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        if(permissionCheck != PackageManager.PERMISSION_GRANTED){ //권한이 없다면
-            //권한을 얻어야하는 퍼미션 목록
-            String[] permissions={Manifest.permission.WRITE_EXTERNAL_STORAGE};
-            //권한을 얻어내도록 유도한다.
-            ActivityCompat.requestPermissions(this,
-                    permissions,
-                    0);
-        }else{//권한이 있다면
-            requestTakePic();
+        switch (view.getId()){
+            case R.id.takePicBtn:
+                int permissionCheck=
+                        ContextCompat.checkSelfPermission(this,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                if(permissionCheck != PackageManager.PERMISSION_GRANTED){ //권한이 없다면
+                    //권한을 얻어야하는 퍼미션 목록
+                    String[] permissions={Manifest.permission.WRITE_EXTERNAL_STORAGE};
+                    //권한을 얻어내도록 유도한다.
+                    ActivityCompat.requestPermissions(this,
+                            permissions,
+                            0);
+                }else{//권한이 있다면
+                    requestTakePic();
+                }
+                break;
+            case R.id.uploadBtn:
+                Map<String, String> map=new HashMap<>();
+                map.put("writer", "울라불라 구라짱♡");
+                Util.sendMultipartRequest(0, UPLOAD_URL, map, absolutePath, this);
+                break;
         }
     }
-    //퍼미션을 체크 했을때 호출되는 메소드
+    //퍼미션을 체크 했을때ㅐ 호출되는 메소드
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -81,7 +97,7 @@ public class MainActivity extends AppCompatActivity
 
     //사진찍겠다는 요청하기
     public void requestTakePic(){
-        //사진을 촬영하겠다는 인텐트 객체 작성하기 > 운영체제에게 촬영장치를 찾아달라고 부탁함
+        //사진을 촬영하겠다는 인텐트 객체 작성하기
         Intent intent=new Intent();
         intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
         //사진을 촬영할수 있는 기기인지 확인해서
@@ -93,18 +109,16 @@ public class MainActivity extends AppCompatActivity
                 String timeStamp=
                         new SimpleDateFormat("yyyyMMdd_HHmmss")
                                 .format(new Date());
-                String imageFileName="JPEG_"+timeStamp+"_";
                 String path=getExternalFilesDir(null).getAbsolutePath();
                 photoFile=new File(path+"/"+timeStamp+".jpg");
                 //절대 경로를 맴버필드에 저장한다.
-                absolutePath=photoFile.getAbsolutePath();//sd카드에 접근할수있는 경로
+                absolutePath=photoFile.getAbsolutePath();
             }catch(Exception e){
                 Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
             }
             if(photoFile!=null){
-                //사진을 저장할 파일의 Uri 객체를 얻어온다. > 현재 보안상의 이유로 그냥 파일을 받아올수 없기 때문에 파일_프로바이더를 통해 파일을 받는다
+                //사진을 저장할 파일의 Uri 객체를 얻어온다.
                 Uri uri= FileProvider.getUriForFile(this, "com.gura.step09camera.fileprovider", photoFile);
-                //매니페스트에 선언되어있어야하고 xml문서도 존재해야 FileProvider를 실행할수있다
 
                 Log.i("uri", uri.getPath());
                 //인텐트에 Uri 객체를 담고
@@ -190,9 +204,21 @@ public class MainActivity extends AppCompatActivity
         imageView.setImageBitmap(bitmap);
     }
 
+    @Override
+    public void onSuccess(int requestId, Map<String, Object> result) {
+        new AlertDialog.Builder(this)
+                .setMessage("업로드 되었습니다.")
+                .setNeutralButton("확인", null)
+                .create()
+                .show();
+    }
+
+    @Override
+    public void onFail(int requestId, Map<String, Object> result) {
+        new AlertDialog.Builder(this)
+                .setMessage("업로드 실패!")
+                .setNeutralButton("확인", null)
+                .create()
+                .show();
+    }
 }
-
-
-
-
-
